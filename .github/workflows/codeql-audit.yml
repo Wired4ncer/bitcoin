@@ -44,7 +44,9 @@ jobs:
       # Manual build: Bitcoin Core uses CMake. Keep the build minimal (no GUI/wallet
       # extras) so CodeQL traces the consensus/net/validation core quickly.
       - name: Configure
-        run: cmake -B build -DBUILD_GUI=OFF -DBUILD_TESTS=OFF -DENABLE_WALLET=ON
+        # ENABLE_IPC=OFF: Cap'n Proto isn't installed on the runner (multiprocess is
+        # optional and not needed for a security scan of the consensus/net/validation core).
+        run: cmake -B build -DBUILD_GUI=OFF -DBUILD_TESTS=OFF -DENABLE_WALLET=ON -DENABLE_IPC=OFF
 
       - name: Build
         run: cmake --build build -j"$(nproc)"
