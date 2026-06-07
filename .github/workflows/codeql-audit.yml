@@ -1,0 +1,55 @@
+# CodeQL security audit workflow (added for security assessment of the fork).
+# Runs the C/C++ CodeQL "security-and-quality" query pack on pushes, PRs, and weekly.
+# Results appear under the repo's Security > Code scanning tab.
+name: "CodeQL audit"
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+  schedule:
+    # Weekly re-scan (Mondays 06:00 UTC) to catch newly published query updates.
+    - cron: "0 6 * * 1"
+  workflow_dispatch: {}
+
+jobs:
+  analyze:
+    name: Analyze (cpp)
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential cmake pkg-config python3 \
+            libevent-dev libboost-dev libsqlite3-dev
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: cpp
+          # security-and-quality = the broadest first-party pack (security + maintainability)
+          queries: security-and-quality
+
+      # Manual build: Bitcoin Core uses CMake. Keep the build minimal (no GUI/wallet
+      # extras) so CodeQL traces the consensus/net/validation core quickly.
+      - name: Configure
+        run: cmake -B build -DBUILD_GUI=OFF -DBUILD_TESTS=OFF -DENABLE_WALLET=ON
+
+      - name: Build
+        run: cmake --build build -j"$(nproc)"
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:cpp"
