@@ -81,6 +81,11 @@ public:
         m_chain_type = ChainType::MAIN;
         consensus.EcashHeight = 967680; // Retarget boundary, 2016 * 480
         consensus.EcashForkBits = 0x19044b7e; // Difficulty 1e9 at the fork block
+        // ASERT is off until an anchor is chosen. Proposed: mainnet anchors at its fork
+        // block (EcashAsertAnchorHeight = EcashHeight); betanet at a boundary agreed by
+        // its node operators, since it is already past its fork.
+        consensus.EcashAsertAnchorHeight = 0;
+        consensus.EcashAsertHalfLife = 24 * 60 * 60; // one day
         consensus.signet_blocks = false;
         consensus.signet_challenge.clear();
         consensus.nSubsidyHalvingInterval = 210000;
